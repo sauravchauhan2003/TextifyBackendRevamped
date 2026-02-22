@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @Entity
+@Table(name = "users")
 public class UserModel {
 
     @Id
@@ -16,10 +17,10 @@ public class UserModel {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(unique = false, nullable = false)
+    @Column(nullable = false)
     private String username;
 
-    // null / dummy for Google users
+    // Null or dummy for OAuth users
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -28,5 +29,15 @@ public class UserModel {
     @Column(unique = true)
     private String public_key;
 
-    // getters & setters
+    /*
+     * Stored as filesystem paths.
+     * Example:
+     * uploads/profile/12/full.jpg
+     * uploads/profile/12/preview.jpg
+     */
+    @Column(name = "profile_photo_path")
+    private String profilePhotoPath;
+
+    @Column(name = "profile_photo_preview_path")
+    private String profilePhotoPreviewPath;
 }

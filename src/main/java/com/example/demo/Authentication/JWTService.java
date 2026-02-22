@@ -17,7 +17,7 @@ public class JWTService {
     private static final String SECRET_KEY =
             "your-256-bit-secret-your-256-bit-secretuhefueshflmwlahdniuahfkjnaksfuhlauee,snckhabsfjkhajbdhsbkauhkjsndbayhegfjansdbauhfnu"; // ≥ 32 bytes
 
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24 hours
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24*10; // 24 hours
 
     // ---------------- CREATE TOKEN ----------------
     public String generateToken(UserModel user) {

@@ -54,7 +54,7 @@ public class AuthenticationController {
         repository.save(user);
 
         String token = jwtService.generateToken(user);
-        return ResponseEntity.ok(new LoginResponse(token, false));
+        return ResponseEntity.ok(new LoginResponse(token, false,""));
     }
 
     // =========================
@@ -77,8 +77,12 @@ public class AuthenticationController {
 
         String token = jwtService.generateToken(user);
         boolean hasPublicKey = user.getPublic_key() != null;
-
-        return ResponseEntity.ok(new LoginResponse(token, hasPublicKey));
+        String publickey;
+        if(hasPublicKey){
+            publickey=user.getPublic_key();
+        }
+        else publickey="";
+        return ResponseEntity.ok(new LoginResponse(token, hasPublicKey,publickey));
     }
 
     // =========================
@@ -122,8 +126,12 @@ public class AuthenticationController {
 
         String token = jwtService.generateToken(user);
         boolean hasPublicKey = user.getPublic_key() != null;
-
-        return ResponseEntity.ok(new LoginResponse(token, hasPublicKey));
+        String publickey;
+        if(hasPublicKey){
+            publickey=user.getPublic_key();
+        }
+        else publickey="";
+        return ResponseEntity.ok(new LoginResponse(token, hasPublicKey,publickey));
     }
 
     // =========================
@@ -215,5 +223,6 @@ public class AuthenticationController {
 
         return ResponseEntity.ok("Password reset successful");
     }
+
 }
 
