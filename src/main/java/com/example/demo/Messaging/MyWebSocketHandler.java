@@ -1,18 +1,22 @@
 package com.example.demo.Messaging;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-import tools.jackson.databind.ObjectMapper;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class MyWebSocketHandler extends TextWebSocketHandler {
+
+    @Autowired
+    private DirectPendingRepository directPendingRepo;
 
     // email → active session
     private static final ConcurrentHashMap<String, WebSocketSession>
@@ -27,6 +31,9 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
     @Autowired
     private PendingMessageRepository pendingRepo;
 
+    @Autowired
+    private DirectMessageRepository directRepo;
+
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
@@ -36,7 +43,7 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
         String email = (String) session.getAttributes().get("user");
         activeUsers.put(email, session);
 
-        // 🔥 Deliver offline messages
+        // Deliver group offline messages
         List<PendingMessage> pending =
                 pendingRepo.findByReceiverEmail(email);
 
@@ -45,6 +52,16 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
         }
 
         pendingRepo.deleteByReceiverEmail(email);
+
+        // Deliver direct offline messages
+        List<DirectPendingMessage> directPending =
+                directPendingRepo.findByReceiverEmail(email);
+
+        for (DirectPendingMessage msg : directPending) {
+            session.sendMessage(new TextMessage(msg.getCipherText()));
+        }
+
+        directPendingRepo.deleteByReceiverEmail(email);
     }
 
     @Override
@@ -52,15 +69,34 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
                                      TextMessage message)
             throws Exception {
 
-        WsPayload payload =
-                mapper.readValue(message.getPayload(), WsPayload.class);
+        String raw = message.getPayload();
 
-        if ("SEND_MESSAGE".equals(payload.getType())) {
+        // First parse minimal structure to check type
+        BasePayload base =
+                mapper.readValue(raw, BasePayload.class);
+
+        if ("SEND_MESSAGE".equals(base.getType())) {
+
+            WsPayload payload =
+                    mapper.readValue(raw, WsPayload.class);
+
             forwardMessage(payload);
         }
 
-        if ("GROUP_KEY".equals(payload.getType())) {
+        else if ("GROUP_KEY".equals(base.getType())) {
+
+            WsPayload payload =
+                    mapper.readValue(raw, WsPayload.class);
+
             forwardGroupKey(payload);
+        }
+
+        else if ("SEND_DIRECT".equals(base.getType())) {
+
+            DirectWsPayload payload =
+                    mapper.readValue(raw, DirectWsPayload.class);
+
+            forwardDirectMessage(payload);
         }
     }
 
@@ -84,6 +120,7 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
                 pm.setReceiverEmail(receiver);
                 pm.setChatRoom(room);
                 pm.setCipherText(json);
+                pm.setCreatedAt(Instant.now());
                 pendingRepo.save(pm);
             }
         }
@@ -107,6 +144,35 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
                         )
                 );
             }
+        }
+    }
+
+    private void forwardDirectMessage(DirectWsPayload payload) throws Exception {
+
+        String sender = payload.getSenderEmail();
+        String receiver = payload.getReceiverEmail();
+
+        String json = mapper.writeValueAsString(payload);
+
+        // Save direct message history
+        DirectMessage dm = new DirectMessage();
+        dm.setSenderEmail(sender);
+        dm.setReceiverEmail(receiver);
+        dm.setCipherText(payload.getCipherText());
+        dm.setCreatedAt(Instant.now());
+        directRepo.save(dm);
+
+        WebSocketSession target = activeUsers.get(receiver);
+
+        if (target != null && target.isOpen()) {
+            target.sendMessage(new TextMessage(json));
+        } else {
+            // Store as pending if offline
+            DirectPendingMessage pending = new DirectPendingMessage();
+            pending.setReceiverEmail(receiver);
+            pending.setCipherText(json);
+            pending.setCreatedAt(Instant.now());
+            directPendingRepo.save(pending);
         }
     }
 
