@@ -20,5 +20,10 @@ public class ChatParticipant {
     @ManyToOne
     private UserModel user;
 
-    private boolean admin;
+    @Enumerated(EnumType.STRING)
+    private Role role = Role.MEMBER;
+
+    public enum Role {
+        MEMBER, ADMIN, OWNER
+    }
 }

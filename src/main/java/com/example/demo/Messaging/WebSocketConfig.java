@@ -8,17 +8,45 @@ import org.springframework.web.socket.config.annotation.*;
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final JwtInterceptor jwtInterceptor;
-    private final MyWebSocketHandler myWebSocketHandler;  // 🔥 inject handler
+    private final DirectChatHandler directChatHandler;
+    private final GroupChatHandler groupChatHandler;
+    private final DirectSignalingHandler directSignalingHandler;
+    private final AgoraSignalingHandler agoraSignalingHandler;
+    private final NotificationHandler notificationHandler;
 
     public WebSocketConfig(JwtInterceptor jwtInterceptor,
-                           MyWebSocketHandler myWebSocketHandler) {
+                           DirectChatHandler directChatHandler,
+                           GroupChatHandler groupChatHandler,
+                           DirectSignalingHandler directSignalingHandler,
+                           AgoraSignalingHandler agoraSignalingHandler,
+                           NotificationHandler notificationHandler) {
         this.jwtInterceptor = jwtInterceptor;
-        this.myWebSocketHandler = myWebSocketHandler;
+        this.directChatHandler = directChatHandler;
+        this.groupChatHandler = groupChatHandler;
+        this.directSignalingHandler = directSignalingHandler;
+        this.agoraSignalingHandler = agoraSignalingHandler;
+        this.notificationHandler = notificationHandler;
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(myWebSocketHandler, "/ws")   // 🔥 NO new()
+        registry.addHandler(directChatHandler, "/ws/chat/direct")
+                .addInterceptors(jwtInterceptor)
+                .setAllowedOrigins("*");
+                
+        registry.addHandler(groupChatHandler, "/ws/chat/group")
+                .addInterceptors(jwtInterceptor)
+                .setAllowedOrigins("*");
+                
+        registry.addHandler(directSignalingHandler, "/ws/signaling/direct")
+                .addInterceptors(jwtInterceptor)
+                .setAllowedOrigins("*");
+                
+        registry.addHandler(agoraSignalingHandler, "/ws/signaling/agora")
+                .addInterceptors(jwtInterceptor)
+                .setAllowedOrigins("*");
+                
+        registry.addHandler(notificationHandler, "/ws/notifications")
                 .addInterceptors(jwtInterceptor)
                 .setAllowedOrigins("*");
     }

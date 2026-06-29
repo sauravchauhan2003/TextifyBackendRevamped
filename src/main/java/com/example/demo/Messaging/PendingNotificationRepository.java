@@ -8,10 +8,9 @@ import java.util.List;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-public interface DirectPendingRepository extends JpaRepository<DirectPendingMessage, Long> {
-
-    List<DirectPendingMessage> findByReceiverEmail(String receiverEmail);
-
+public interface PendingNotificationRepository extends JpaRepository<PendingNotification, Long> {
+    List<PendingNotification> findByReceiverEmail(String receiverEmail);
+    
     @Transactional
     void deleteByReceiverEmail(String receiverEmail);
 }

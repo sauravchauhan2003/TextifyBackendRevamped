@@ -1,7 +1,7 @@
 # Spring Boot
 target/
 src/main/resources/application.properties
-
+test.js
 # Logs
 *.log
 

@@ -22,5 +22,9 @@ public class ChatRoom {
 
     private String name; // group name (null for 1-1)
 
+    private String description;
+
+    private String inviteLink;
+
     private Instant createdAt;
 }

@@ -29,15 +29,4 @@ public class UserModel {
     @Column(unique = true)
     private String public_key;
 
-    /*
-     * Stored as filesystem paths.
-     * Example:
-     * uploads/profile/12/full.jpg
-     * uploads/profile/12/preview.jpg
-     */
-    @Column(name = "profile_photo_path")
-    private String profilePhotoPath;
-
-    @Column(name = "profile_photo_preview_path")
-    private String profilePhotoPreviewPath;
 }
